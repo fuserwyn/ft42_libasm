@@ -1,0 +1,25 @@
+# Build artifacts
+build/
+*.o
+*.a
+
+# Executables
+tests/test_libasm
+test_libasm
+
+# PDF subject file
+*.pdf
+
+# External test suites (not required)
+libasm_test/
+
+# macOS
+.DS_Store
+
+# Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
