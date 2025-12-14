@@ -50,37 +50,61 @@ make fclean   # Remove all built files
 make re       # Rebuild project
 ```
 
+### Platform Compatibility
+
+This project supports both **macOS** and **Linux (Ubuntu)** platforms:
+- **macOS**: Uses `macho64` format, system calls with offset `0x2000000`, function names with underscore prefix
+- **Linux**: Uses `elf64` format, direct system call numbers, function names without underscore prefix
+- The Makefile automatically detects the platform and uses appropriate compilation flags
+- All source files use conditional compilation (`%ifidn __OUTPUT_FORMAT__,elf64`) to support both platforms
+
 ---
 
 ## Preparation for Defense
 
 ### ✅ Pre-Defense Checklist
 
-1. **Compilation Check**
+1. **Clean Build Test**
    ```bash
    make fclean
    make bonus
    ```
-   Ensure the project compiles without errors or warnings.
+   - Ensure the project compiles without errors or warnings
+   - Verify `libasm.a` is created successfully
+   - Check that all object files are in `build/` directory
 
 2. **Run Tests**
    ```bash
    make test
    ```
-   All tests should pass successfully.
+   - All tests should pass successfully
+   - Test both mandatory and bonus functions
+   - Verify edge cases (NULL, empty strings, etc.)
 
-3. **Norm Check**
+3. **Cross-Platform Test (if possible)**
+   ```bash
+   # Test on macOS
+   make fclean && make bonus && make test
+   
+   # Test on Linux (Ubuntu)
+   make fclean && make bonus && make test
+   ```
+
+4. **Norm Check**
    - Ensure all files comply with 42 norm
    - Check formatting and comments
+   - Verify no `.o` files are in repository (check `.gitignore`)
 
-4. **Prepare Demonstration**
-   - Prepare examples for each function
-   - Be ready to explain the algorithm
-
-5. **Study the Code**
-   - You must understand every line of assembly code
+5. **Code Review**
+   - Understand every line of assembly code
    - Know the purpose of each register
    - Understand x86-64 calling convention
+   - Be ready to explain algorithm choices
+
+6. **Prepare Demonstration**
+   - Prepare simple examples for each function
+   - Be ready to trace through the code line by line
+   - Prepare answers for common questions (see below)
 
 ---
 
@@ -183,7 +207,11 @@ make re       # Rebuild project
 - File descriptor is a number identifying an open file (0=stdin, 1=stdout, 2=stderr)
 - On error, `rax` contains negative value, and `errno` is set
 
-**Important:** On macOS, system calls have offset `0x2000000`. On Linux, direct system call numbers are used.
+**Important:** 
+- On macOS: system calls have offset `0x2000000` (write = `0x2000004`, read = `0x2000003`)
+- On Linux: direct system call numbers (write = `1`, read = `0`)
+- Error handling: macOS uses `___error()`, Linux uses `__errno_location()`
+- The code uses conditional compilation to support both platforms
 
 ---
 
@@ -394,10 +422,12 @@ make re       # Rebuild project
    - Called via `syscall` (Linux) or `syscall` with macro (macOS)
 
 4. **Difference between macOS and Linux?**
-   - macOS: system calls have offset `0x2000000`
-   - Linux: direct system call numbers
-   - macOS: object file format `macho64`
-   - Linux: format `elf64`
+   - **Object file format**: macOS uses `macho64`, Linux uses `elf64`
+   - **System calls**: macOS uses offset `0x2000000` (write = `0x2000004`), Linux uses direct numbers (write = `1`)
+   - **Function names**: macOS uses underscore prefix (`_ft_strlen`), Linux without (`ft_strlen`)
+   - **Error handling**: macOS uses `___error()`, Linux uses `__errno_location()`
+   - **Error detection**: macOS uses carry flag (`jnc`), Linux checks for negative return value
+   - **Makefile**: Automatically detects platform and uses appropriate flags
 
 ### Function-Specific Questions
 
@@ -514,9 +544,36 @@ gdb tests/test_libasm
 # Run tests
 make test
 
-# Compile test file manually
+# Compile test file manually (macOS)
 cc -arch x86_64 -Wall -Wextra -Werror -I include tests/main.c libasm.a -o test_manual
+
+# Compile test file manually (Linux)
+cc -Wall -Wextra -Werror -I include tests/main.c libasm.a -o test_manual
+
+# Run manual test
 ./test_manual
+```
+
+### Platform-Specific Commands
+
+```bash
+# Check current platform
+uname -s
+
+# View archive contents
+ar -t libasm.a
+
+# Check archive index (Linux)
+ranlib libasm.a
+# or
+ar s libasm.a
+
+# View symbols in archive
+nm libasm.a
+
+# Disassemble object file
+objdump -d build/ft_strlen.o  # Linux
+otool -tV build/ft_strlen.o   # macOS
 ```
 
 ### Code Checking
@@ -531,37 +588,124 @@ grep -r "TODO\|FIXME\|BUG" src/
 
 ---
 
-## Tips for Successful Defense
+## Defense Day Protocol
 
-1. **Study the code in advance**
-   - You must understand every line
-   - Prepare explanations for each function
+### Step-by-Step Defense Process
 
-2. **Practice explanations**
-   - Explain the code to a friend or colleague
-   - Record yourself on video
+1. **Initial Setup (2-3 minutes)**
+   ```bash
+   # Show clean state
+   ls -la
+   make fclean
+   
+   # Build the project
+   make bonus
+   
+   # Verify compilation
+   ls -la libasm.a
+   ```
 
-3. **Be ready for questions**
-   - Why did you choose this algorithm?
-   - Can it be optimized?
-   - What happens in edge cases?
+2. **Run Tests (2-3 minutes)**
+   ```bash
+   make test
+   # Show all tests passing
+   ```
 
-4. **Demonstrate functionality**
+3. **Code Walkthrough (15-20 minutes)**
+   - Start with mandatory functions
+   - Explain each function line by line
+   - Show register usage and calling convention
+   - Explain system calls for `ft_write` and `ft_read`
+
+4. **Bonus Functions (if implemented) (10-15 minutes)**
+   - Explain list operations
+   - Show memory management
+   - Demonstrate function pointers
+
+5. **Questions & Answers (10-15 minutes)**
+   - Answer questions about your implementation
+   - Discuss optimization possibilities
+   - Explain platform differences (macOS vs Linux)
+
+### Tips for Successful Defense
+
+1. **Study the code thoroughly**
+   - You must understand every line of assembly
+   - Know why each instruction is used
+   - Understand register usage and stack management
+
+2. **Practice your explanations**
+   - Explain the code out loud to yourself
+   - Practice tracing through execution step by step
+   - Prepare for "what happens if..." questions
+
+3. **Be ready for common questions**
+   - "Why did you use `xor rax, rax` instead of `mov rax, 0`?"
+   - "How does error handling work in `ft_write`?"
+   - "What's the difference between macOS and Linux implementation?"
+   - "Can this be optimized?"
+
+4. **Demonstrate confidently**
    - Show that all tests pass
-   - Demonstrate function operation
+   - Walk through code execution mentally
+   - Explain edge cases handling
 
-5. **Be honest**
-   - If you don't know the answer, say so
-   - Show that you understand the basics
+5. **Be honest and clear**
+   - If you don't know something, admit it
+   - Show that you understand the fundamentals
+   - Explain your thought process
 
 ---
+
+## Common Defense Scenarios
+
+### Scenario 1: "Show me how ft_strlen works"
+
+**What to do:**
+1. Open `src/ft_strlen.s`
+2. Walk through each instruction:
+   - `xor rax, rax` - initialize counter to 0
+   - `.loop:` - start of loop
+   - `cmp byte [rdi + rax], 0` - compare current byte with null terminator
+   - `je .done` - if equal, exit loop
+   - `inc rax` - increment counter
+   - `jmp .loop` - continue loop
+   - `.done: ret` - return length in rax
+
+### Scenario 2: "Explain the system call in ft_write"
+
+**What to do:**
+1. Explain system call mechanism:
+   - System call number in `rax`
+   - Arguments in `rdi`, `rsi`, `rdx`
+   - Call `syscall` instruction
+2. Show platform differences:
+   - macOS: `0x2000004` (with offset)
+   - Linux: `1` (direct)
+3. Explain error handling:
+   - Check return value (negative = error)
+   - Set errno via platform-specific function
+
+### Scenario 3: "How does ft_strdup work?"
+
+**What to do:**
+1. Show the algorithm:
+   - Save `rdi` on stack (it will be modified)
+   - Call `ft_strlen` to get length
+   - Allocate `length + 1` bytes with `malloc`
+   - Check if `malloc` returned NULL
+   - Restore original string pointer from stack
+   - Call `ft_strcpy` to copy string
+   - Return pointer or NULL
 
 ## Additional Resources
 
 - [NASM Documentation](https://www.nasm.us/docs.php)
 - [x86-64 Calling Convention](https://en.wikipedia.org/wiki/X86_calling_conventions)
-- [System Call Numbers](https://github.com/apple/darwin-xnu/blob/main/bsd/kern/syscalls.master)
-- [Assembly Language Programming](https://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
+- [System Call Numbers - macOS](https://github.com/apple/darwin-xnu/blob/main/bsd/kern/syscalls.master)
+- [System Call Numbers - Linux](https://chromium.googlesource.com/chromiumos/docs/+/master/constants/syscalls.md)
+- [x86-64 Assembly Guide](https://www.cs.virginia.edu/~evans/cs216/guides/x86.html)
+- [Linux System Call Table](https://syscalls.kernelgrok.com/)
 
 ---
 
