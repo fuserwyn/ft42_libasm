@@ -1,10 +1,17 @@
 section .text
+%ifidn __OUTPUT_FORMAT__,elf64
+global ft_list_sort
+; ft_list_sort(t_list **begin_list, int (*cmp)())
+; rdi = begin_list (pointer to pointer)
+; rsi = cmp function pointer
+ft_list_sort:
+%else
 global _ft_list_sort
-
 ; ft_list_sort(t_list **begin_list, int (*cmp)())
 ; rdi = begin_list (pointer to pointer)
 ; rsi = cmp function pointer
 _ft_list_sort:
+%endif
     test    rdi, rdi        ; check if begin_list is NULL
     je      .done
     test    rsi, rsi        ; check if cmp is NULL

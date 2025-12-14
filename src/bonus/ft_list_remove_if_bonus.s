@@ -1,8 +1,13 @@
 section .text
+%ifidn __OUTPUT_FORMAT__,elf64
+global ft_list_remove_if
+extern free
+ft_list_remove_if:
+%else
 global _ft_list_remove_if
 extern _free
-
 _ft_list_remove_if:
+%endif
     push    r12
     push    r13
     push    r14
@@ -66,7 +71,11 @@ _ft_list_remove_if:
     push    r14
     push    r15
     mov     rdi, rbx        ; current node
+%ifidn __OUTPUT_FORMAT__,elf64
+    call    free
+%else
     call    _free
+%endif
     pop     r15
     pop     r14
     pop     r13
@@ -131,7 +140,11 @@ _ft_list_remove_if:
     push    r15
     push    rbx
     mov     rdi, rcx        ; current node
+%ifidn __OUTPUT_FORMAT__,elf64
+    call    free
+%else
     call    _free
+%endif
     pop     rbx
     pop     r15
     pop     r14

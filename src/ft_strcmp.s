@@ -1,7 +1,11 @@
 section .text
+%ifidn __OUTPUT_FORMAT__,elf64
+global ft_strcmp
+ft_strcmp:
+%else
 global _ft_strcmp
-
 _ft_strcmp:
+%endif
 .loop:
     mov     al, [rdi]
     mov     dl, [rsi]

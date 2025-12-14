@@ -1,8 +1,13 @@
 section .text
+%ifidn __OUTPUT_FORMAT__,elf64
+global ft_atoi_base
+extern ft_strlen
+ft_atoi_base:
+%else
 global _ft_atoi_base
 extern _ft_strlen
-
 _ft_atoi_base:
+%endif
     push    r12
     push    r13
     push    r14
@@ -22,7 +27,11 @@ _ft_atoi_base:
     
     ; Get base length
     mov     rdi, r13
+%ifidn __OUTPUT_FORMAT__,elf64
+    call    ft_strlen
+%else
     call    _ft_strlen
+%endif
     mov     r14, rax        ; base_len
     
     ; Check base validity: must be >= 2
